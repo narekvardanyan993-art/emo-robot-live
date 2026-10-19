@@ -10,10 +10,22 @@ class EmoSoundSynth {
         this.loopTimer = null;
         this.vocoderTimer = null;
         this.isSpeakingNow = false;
+        this.cachedVoices = [];
 
-        this.voiceRate = parseFloat(localStorage.getItem('emo_voice_rate') || '0.84');
-        this.voicePitch = parseFloat(localStorage.getItem('emo_voice_pitch') || '0.92');
-        this.vocoderLevel = parseFloat(localStorage.getItem('emo_vocoder_level') || '0.65');
+        const savedRate = localStorage.getItem('emo_voice_rate');
+        this.voiceRate = (savedRate === '0.84' || !savedRate) ? 1.05 : parseFloat(savedRate);
+
+        const savedPitch = localStorage.getItem('emo_voice_pitch');
+        this.voicePitch = (savedPitch === '0.92' || !savedPitch) ? 0.35 : parseFloat(savedPitch);
+
+        const savedVocoder = localStorage.getItem('emo_vocoder_level');
+        this.vocoderLevel = (!savedVocoder) ? 0.75 : parseFloat(savedVocoder);
+
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                this.cachedVoices = window.speechSynthesis.getVoices();
+            };
+        }
     }
 
     init() {
@@ -73,38 +85,57 @@ class EmoSoundSynth {
         if (!this.ctx || !this.masterGain) return;
 
         const now = this.ctx.currentTime;
-        const baseFreq = 115 + (this.voicePitch * 65) + (Math.random() - 0.5) * 35;
-        const dur = 0.075;
-        const vol = 0.13 * this.vocoderLevel;
+        // Базовый низкий тон вокодера дроида (глубокий и плотный)
+        const baseFreq = 72 + (this.voicePitch * 48) + (Math.random() - 0.5) * 18;
+        const dur = 0.082;
+        const vol = 0.16 * this.vocoderLevel;
 
         const osc1 = this.ctx.createOscillator();
         const osc2 = this.ctx.createOscillator();
-        const filter = this.ctx.createBiquadFilter();
+        const metalOsc = this.ctx.createOscillator();
+
+        const formantFilter = this.ctx.createBiquadFilter();
+        const metalFilter = this.ctx.createBiquadFilter();
         const gain = this.ctx.createGain();
 
+        // 1. Плотные гармоники (пила + прямоугольник)
         osc1.type = 'sawtooth';
         osc2.type = 'square';
         osc1.frequency.setValueAtTime(baseFreq, now);
-        osc1.frequency.linearRampToValueAtTime(baseFreq * 1.12, now + dur);
-        osc2.frequency.setValueAtTime(baseFreq * 1.5, now);
+        osc1.frequency.linearRampToValueAtTime(baseFreq * 1.06, now + dur);
+        osc2.frequency.setValueAtTime(baseFreq * 2.02, now); // Детюн для металлического биения
 
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(950, now);
-        filter.Q.setValueAtTime(4.5, now);
+        // 2. Металлический звон (цифровой дроид-скрежет)
+        metalOsc.type = 'triangle';
+        metalOsc.frequency.setValueAtTime(820 + (Math.random() * 260), now);
+        metalOsc.frequency.exponentialRampToValueAtTime(410, now + dur);
+
+        formantFilter.type = 'bandpass';
+        formantFilter.frequency.setValueAtTime(820, now);
+        formantFilter.Q.setValueAtTime(5.2, now);
+
+        metalFilter.type = 'highpass';
+        metalFilter.frequency.setValueAtTime(1250, now);
 
         gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(vol, now + 0.015);
+        gain.gain.linearRampToValueAtTime(vol, now + 0.012);
         gain.gain.exponentialRampToValueAtTime(0.0008, now + dur);
 
-        osc1.connect(filter);
-        osc2.connect(filter);
-        filter.connect(gain);
+        osc1.connect(formantFilter);
+        osc2.connect(formantFilter);
+        metalOsc.connect(metalFilter);
+
+        formantFilter.connect(gain);
+        metalFilter.connect(gain);
         gain.connect(this.masterGain);
 
         osc1.start(now);
         osc2.start(now);
+        metalOsc.start(now);
+
         osc1.stop(now + dur + 0.01);
         osc2.stop(now + dur + 0.01);
+        metalOsc.stop(now + dur + 0.01);
     }
 
     stopVocoderModulation() {
@@ -126,13 +157,27 @@ class EmoSoundSynth {
 
             const utter = new SpeechSynthesisUtterance(cleanText);
             utter.lang = 'ru-RU';
-            utter.rate = this.voiceRate;
-            utter.pitch = this.voicePitch;
-            utter.volume = 0.95;
+            utter.rate = this.voiceRate || 1.05;
+            utter.pitch = (this.voicePitch !== undefined && this.voicePitch !== null) ? this.voicePitch : 0.35;
+            utter.volume = 1.0;
 
-            const voices = window.speechSynthesis.getVoices();
-            const ruVoice = voices.find(v => v.lang && v.lang.toLowerCase().includes('ru'));
-            if (ruVoice) utter.voice = ruVoice;
+            const voices = (window.speechSynthesis.getVoices && window.speechSynthesis.getVoices().length > 0)
+                ? window.speechSynthesis.getVoices()
+                : (this.cachedVoices || []);
+
+            let chosenVoice = null;
+            const ruVoices = voices.filter(v => v.lang && v.lang.toLowerCase().includes('ru'));
+            if (ruVoices.length > 0) {
+                chosenVoice = ruVoices.find(v => /(google|microsoft|robot|yandex|david|alex|milena|yuri|dmitri)/i.test(v.name)) ||
+                              ruVoices.find(v => !v.localService) ||
+                              ruVoices[0];
+            }
+            if (!chosenVoice) {
+                chosenVoice = voices.find(v => /(robot|google|david|zira|samantha|alex|fred)/i.test(v.name)) ||
+                              voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en')) ||
+                              voices[0] || null;
+            }
+            if (chosenVoice) utter.voice = chosenVoice;
 
             utter.onstart = () => {
                 this.isSpeakingNow = true;
@@ -143,7 +188,7 @@ class EmoSoundSynth {
                         return;
                     }
                     this.playVocoderSyllablePulse();
-                }, 135);
+                }, 105);
             };
 
             utter.onboundary = () => {
