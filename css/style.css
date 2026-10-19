@@ -1,0 +1,134 @@
+* {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+}
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000000;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    color: #ffffff;
+}
+.oled-matrix-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    background-image: 
+        linear-gradient(rgba(16, 16, 16, 0) 50%, rgba(0, 0, 0, 0.34) 50%), 
+        linear-gradient(90deg, rgba(255, 0, 0, 0.015), rgba(0, 255, 0, 0.006), rgba(0, 255, 0, 0.015));
+    background-size: 100% 3px, 4px 100%;
+}
+#edge-vignette {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    box-shadow: inset 0 0 110px rgba(0, 242, 254, 0.12);
+    transition: box-shadow 0.4s ease;
+}
+.glass-hud {
+    background: rgba(10, 12, 18, 0.82);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.92);
+}
+.custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-scroll::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); border-radius: 99px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.22); border-radius: 99px; }
+.emo-btn {
+    transition: all 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.emo-btn:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.13);
+    border-color: rgba(255, 255, 255, 0.28);
+}
+.emo-btn:active {
+    transform: scale(0.95);
+}
+.emo-btn.active-state {
+    background: rgba(0, 242, 254, 0.2);
+    border-color: var(--emo-color, #00F2FE);
+    box-shadow: 0 0 18px rgba(0, 242, 254, 0.32);
+    color: #ffffff;
+}
+.cat-pill.active-cat {
+    background: var(--emo-color, #00F2FE);
+    color: #000000;
+    font-weight: 700;
+    box-shadow: 0 0 14px var(--emo-color, #00F2FE);
+}
+.prompt-chip {
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+.prompt-chip:hover {
+    background: rgba(0, 242, 254, 0.18);
+    border-color: var(--emo-color, #00F2FE);
+    transform: translateY(-1px);
+}
+@keyframes pulse-mic {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 42, 84, 0.7); }
+    50% { box-shadow: 0 0 0 12px rgba(255, 42, 84, 0); }
+}
+.mic-recording {
+    animation: pulse-mic 1.3s infinite;
+    background: #FF2A54 !important;
+    color: #ffffff !important;
+    border-color: #FF2A54 !important;
+}
+
+/* Quick Dock - Выдвижная панель управления */
+#quick-dock {
+    position: fixed;
+    bottom: 5.2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 35;
+    width: min(94vw, 760px);
+}
+
+#quick-dock.dock-closed {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(18px) scale(0.97);
+}
+
+.color-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 9999px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    flex-shrink: 0;
+}
+
+.color-swatch:hover {
+    transform: scale(1.18);
+}
+
+.color-swatch.active {
+    border-color: #ffffff !important;
+    transform: scale(1.22);
+    box-shadow: 0 0 12px var(--swatch-color, #00F2FE);
+}
+
+#emotion-grid::-webkit-scrollbar {
+    width: 4px;
+}
+#emotion-grid::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 99px;
+}
+#emotion-grid::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 99px;
+}
