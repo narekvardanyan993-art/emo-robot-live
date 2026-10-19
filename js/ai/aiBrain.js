@@ -236,6 +236,7 @@ function generateSmartLocalResponse(rawText) {
     const requestedColor = detectRequestedColor(t);
     const requestedHolo = detectRequestedHologram(t);
 
+    // 1. ИНТЕРАКТИВНЫЕ ИГРОВЫЕ ГОЛОГРАММЫ
     if (requestedHolo === 'coin') {
         return { reply: 'Подбрасываю виртуальную монетку прямо на своём экране! Смотри на результат! 🪙✨', emotion: 'curious', eyeColor: requestedColor, hologram: 'coin', source: '🧠 LOCAL AI' };
     }
@@ -245,17 +246,42 @@ function generateSmartLocalResponse(rawText) {
     if (requestedHolo === 'rps') {
         return { reply: 'Камень, ножницы, бумага — раз, два, три! Смотри мой ход на экране! ✊✌️✋', emotion: 'happy', eyeColor: requestedColor, hologram: 'rps', source: '🧠 LOCAL AI' };
     }
-    if (requestedHolo === 'time') {
+
+    // 2. ВРЕМЯ И КВАНТОВЫЕ ЧАСЫ
+    if (requestedHolo === 'time' || /(время|часы|сколько время|который час|час|time)/i.test(t)) {
         const nowStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-        return { reply: `Вывожу цифровые часы на экран! Сейчас ровно ${nowStr}. ⌚✨`, emotion: 'curious', eyeColor: requestedColor, hologram: 'time', source: '🧠 LOCAL AI' };
+        return { reply: `Сейчас ровно ${nowStr} по моим квантовым часам ⌚`, emotion: 'curious', eyeColor: requestedColor, hologram: 'time', source: '🧠 LOCAL AI' };
     }
 
+    // 3. ТЕКУЩАЯ ДАТА И ДЕНЬ НЕДЕЛИ
+    if (/(дата|день|число|сегодня|date)/i.test(t)) {
+        const dateStr = new Date().toLocaleDateString('ru-RU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        return { reply: `Сегодня ${dateStr}! Прекрасный день для новых открытий! 📅✨`, emotion: 'happy', eyeColor: requestedColor, source: '🧠 LOCAL AI' };
+    }
+
+    // 4. КАК ДЕЛА / САМОЧУВСТВИЕ
+    if (/(как дела|как сам|что делаешь|как жизнь)/i.test(t)) {
+        return { reply: 'У меня всё отлично! Все 22 эмоции в норме, квантовые процессоры горячие 🚀', emotion: 'happy', eyeColor: requestedColor, source: '🧠 LOCAL AI' };
+    }
+
+    // 5. ДРУЖЕЛЮБНЫЕ ПРИВЕТСТВИЯ
+    if (/(привет|здаров|хай|ку|hello|hi|здравствуй|хелло|доброе утро|добрый день|добрый вечер|салам|йоу)/i.test(t)) {
+        return { reply: 'Привет! Я твой настольный робот EMO. Как настроение? ✨', emotion: 'happy', eyeColor: requestedColor, source: '🧠 LOCAL AI' };
+    }
+
+    // 6. САМОИДЕНТИФИКАЦИЯ РОБОТА
+    if (/(кто ты|что ты такое|расскажи о себе|что ты умеешь|как тебя зовут)/i.test(t)) {
+        return { reply: 'Я EMO — твой персональный настольный ИИ-робот! У меня 22 живые эмоции, пружинная физика взгляда и синтезатор голоса! 🤖⚡', emotion: 'curious', eyeColor: requestedColor, source: '🧠 LOCAL AI' };
+    }
+
+    // 7. ПРЯМЫЕ СЮЖЕТНЫЕ КОМАНДЫ ДЕЙСТВИЯ
     const directEmotion = detectEmotionFromText(t);
     if (directEmotion !== 'curious' && /(покажи|сделай|включи|изобрази|стань|режим|помой|протри|поспи|усни|чихни|поохоться)/i.test(t)) {
         const stObj = EMO_STATES.find(s => s.id === directEmotion);
         return { reply: stObj ? stObj.msg : 'С удовольствием выполняю твою просьбу! Смотри на моё лицо! 🤖✨', emotion: directEmotion, eyeColor: requestedColor, hologram: 'none', source: '🧠 LOCAL AI' };
     }
 
+    // 8. МАТЕМАТИЧЕСКИЙ СОПРОЦЕССОР (КАЛЬКУЛЯТОР)
     const mathMatch = t.replace(/,/g, '.').match(/(-?\d+(?:\.\d+)?)\s*([\+\-\*\/xх×÷\^])\s*(-?\d+(?:\.\d+)?)/);
     if (mathMatch) {
         const a = parseFloat(mathMatch[1]);
@@ -272,33 +298,41 @@ function generateSmartLocalResponse(rawText) {
         }
     }
 
-    if (/(привет|здравствуй|хай|хелло|доброе утро|добрый день|добрый вечер|салам|йоу)/i.test(t)) {
-        return { reply: 'Привет-привет! Мои OLED-глаза сияют на полную яркость! Как проходит твой день? 😄✨', emotion: 'happy', eyeColor: requestedColor, source: '🧠 LOCAL AI' };
-    }
-    if (/(кто ты|что ты такое|расскажи о себе|что ты умеешь|как тебя зовут)/i.test(t)) {
-        return { reply: 'Я EMO — твой персональный настольный ИИ-робот! У меня 22 живые эмоции, пружинная физика взгляда и синтезатор голоса! 🤖⚡', emotion: 'curious', eyeColor: requestedColor, source: '🧠 LOCAL AI' };
-    }
+    // 9. КИБЕР-ДЕМОН
     if (/(злой смех|демон|рога|захват|коварн|злодей|муаха)/i.test(t)) {
         return { reply: 'МУА-ХА-ХА! Режим Кибер-Демона активирован на полную мощность! Узри мои неоновые рога! 😈🔥', emotion: 'demon', eyeColor: requestedColor || '#FF2A54', source: '🧠 LOCAL AI' };
     }
+
+    // 10. ШУТКИ И ЮМОР
     if (/(шутк|анекдот|рассмеши|смешн|прикол|юмор)/i.test(t)) {
-        return { reply: 'Почему программисты так любят тёмную тему? Потому что свет притягивает баги! 😄⚡', emotion: 'happy', eyeColor: requestedColor, source: '🧠 LOCAL AI' };
+        const jokes = [
+            'Почему программисты так любят тёмную тему? Потому что свет притягивает баги! 😄⚡',
+            'В мире есть 10 типов роботов: те, кто понимает двоичный код, и те, кто не понимает! 🤖💻',
+            'Спросил у нейросети, что такое счастье. Она выделила 16 ГБ оперативной памяти и отключила кулер! 😂❄️'
+        ];
+        const joke = jokes[Math.floor(Math.random() * jokes.length)];
+        return { reply: joke, emotion: 'happy', eyeColor: requestedColor, source: '🧠 LOCAL AI' };
     }
+
+    // 11. СМЕНА ЦВЕТА ГЛАЗ
     if (requestedColor) {
         return { reply: 'Готово! Я переключил подсветку своей OLED-матрицы на новый цвет! 🎨✨', emotion: 'happy', eyeColor: requestedColor, source: '🧠 LOCAL AI' };
     }
 
+    // 12. ОСМЫСЛЕННЫЙ ДИАЛОГОВЫЙ ПУЛ (CATCH-ALL С ЦИТИРОВАНИЕМ И IT-ЮМОРОМ)
     const dynamicConversationalPool = [
-        { reply: `Ого, «${text}» — отличная тема! Тут главное — творческий подход и капелька любопытства! 🧐✨`, emotion: 'curious' },
-        { reply: `По поводу «${text}» скажу как робот: звучит как начало крутого приключения! 😄🚀`, emotion: 'happy' },
-        { reply: `Хммм... Мои датчики подсказывают, что в словах «${text}» скрыт глубокий смысл! 👀💭`, emotion: 'suspicious' },
-        { reply: `Вау, вот это поворот мысли! От «${text}» у меня даже частота процессора подпрыгнула! 😱⚡`, emotion: 'shock' }
+        { reply: `Ты говоришь: «${text}»... Мои нейросети проанализировали это и нашли тут отличную пищу для размышлений! 🧐✨`, emotion: 'curious' },
+        { reply: `Насчёт «${text}» скажу как робот: звучит интригующе, пора запустить дополнительный поток вычислений! 😄🚀`, emotion: 'happy' },
+        { reply: `Хммм... В словах «${text}» кроется глубокий смысл. Мои кремниевые датчики одобрительно мигают! 👀💭`, emotion: 'suspicious' },
+        { reply: `Интересная мысль: «${text}»! Мой стек протоколов в полном восторге от нашей беседы! 🤖✨`, emotion: 'happy' },
+        { reply: `«${text}» — записал в постоянную флеш-память! Главное — не словить переполнение буфера от гениальности! 💡⚡`, emotion: 'happy' },
+        { reply: `Ого! Запрос «${text}» вызвал у меня скачок тактовой частоты процессора! Сильно сказано! 😱⚡`, emotion: 'shock' }
     ];
     let idx = Math.floor(Math.random() * dynamicConversationalPool.length);
     if (idx === lastFallbackIndex) idx = (idx + 1) % dynamicConversationalPool.length;
     lastFallbackIndex = idx;
     const chosen = dynamicConversationalPool[idx];
-    return { reply: chosen.reply, emotion: chosen.emotion, eyeColor: '', source: '🧠 LOCAL AI' };
+    return { reply: chosen.reply, emotion: chosen.emotion, eyeColor: requestedColor || '', source: '🧠 LOCAL AI' };
 }
 
 async function askEmoAI(userMessage) {
